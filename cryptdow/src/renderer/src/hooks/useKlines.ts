@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { Candle } from '../../../shared/types'
 
 async function fetchKlines(symbol: string, interval: string): Promise<Candle[]> {
-  const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=500`
+  const url = `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=500`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Binance: ${res.status}`)
   const rows: any[][] = await res.json()

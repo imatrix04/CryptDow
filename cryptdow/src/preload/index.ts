@@ -1,8 +1,15 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { CryptDowApi } from '../shared/types'
 
-// Custom APIs for renderer
-const api = {}
+const api: CryptDowApi = {
+  getBalances: (portfolioId) => ipcRenderer.invoke('portfolio:balances', portfolioId),
+  getTrades: (portfolioId) => ipcRenderer.invoke('portfolio:trades', portfolioId),
+  placeMarketOrder: (input) => ipcRenderer.invoke('trading:market-order', input),
+  getPortfolio: (portfolioId) => ipcRenderer.invoke('portfolio:get', portfolioId),
+  resetPortfolio: (portfolioId, amount) =>
+    ipcRenderer.invoke('portfolio:reset', portfolioId, amount)
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

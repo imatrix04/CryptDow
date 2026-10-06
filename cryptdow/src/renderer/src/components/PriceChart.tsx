@@ -15,6 +15,7 @@ export function PriceChart() {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
+  const readyRef = useRef(false)
   const { data, isLoading, error } = useKlines(symbol, interval)
 
   // Création du graphique (une seule fois)
@@ -30,26 +31,47 @@ export function PriceChart() {
       downColor: '#ef4444',
       borderVisible: false,
       wickUpColor: '#22c55e',
-      wickDownColor: '#ef4444'
+      wickDownColor: '#ef4444',
+      priceFormat: { type: 'price', precision: 4, minMove: 0.0001 }
     })
     chartRef.current = chart
     return () => chart.remove()
   }, [])
 
-  // Chargement de l'historique
+  // Nouvelle paire / timeframe : on vide le graphique et on bloque le live
   useEffect(() => {
-    if (!data || !seriesRef.current) return
-    seriesRef.current.setData(
-      data.map((c) => ({ ...c, time: c.time as UTCTimestamp }))
-    )
-    chartRef.current?.timeScale().fitContent()
+    readyRef.current = false
+    seriesRef.current?.setData([])
+  }, [symbol, interval])
+
+  // Chargement de l'historique + recentrage
+  useEffect(() => {
+    const series = seriesRef.current
+    const chart = chartRef.current
+    if (!data || !series || !chart) return
+
+    series.setData(data.map((c) => ({ ...c, time: c.time as UTCTimestamp })))
+
+    // Réactive l'échelle automatique des prix
+    chart.priceScale('right').applyOptions({ autoScale: true })
+
+    // Cadre sur les ~120 dernières bougies, avec un peu d'espace à droite
+    const n = data.length
+    chart.timeScale().setVisibleLogicalRange({ from: n - 120, to: n + 5 })
+
+    readyRef.current = true
   }, [data])
 
-  // Mises à jour en direct
   useKlineStream(symbol, interval, (c) => {
-    seriesRef.current?.update({ ...c, time: c.time as UTCTimestamp })
     setLastPrice(c.close)
+    if (!readyRef.current) return
+    try {
+      seriesRef.current?.update({ ...c, time: c.time as UTCTimestamp })
+    } catch (err) {
+      console.error('[chart] update', err)
+    }
   })
+  
 
   return (
     <div className="relative h-full w-full">

@@ -16,7 +16,7 @@ export function useKlineStream(
     let retryTimer: ReturnType<typeof setTimeout>
 
     const connect = () => {
-      const url = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`
+      const url = `wss://data-stream.binance.vision/ws/${symbol.toLowerCase()}@kline_${interval}`
       ws = new WebSocket(url)
 
       ws.onopen = () => console.log('[WS] connecté', url)
